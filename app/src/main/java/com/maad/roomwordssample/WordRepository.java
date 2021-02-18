@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Update;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class WordRepository {
 
@@ -24,53 +26,19 @@ public class WordRepository {
     }
 
     public void insertWord(Word word) {
-        new InsertAsyncTask().execute(word);
-    }
-
-    class InsertAsyncTask extends AsyncTask<Word, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Word... words) {
-            wordDao.insert(words[0]);
-            return null;
-        }
+        WordRoomDatabase.executorService.execute(() -> wordDao.insert(word));
     }
 
     public void deleteAllWords() {
-        new DeleteAllWords().execute();
-    }
-
-    class DeleteAllWords extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected Void doInBackground(Void... voids) {
-            wordDao.deleteAll();
-            return null;
-        }
+        WordRoomDatabase.executorService.execute(() -> wordDao.deleteAll());
     }
 
     public void deleteWord(Word word) {
-        new DeleteWord().execute(word);
+        WordRoomDatabase.executorService.execute(() -> wordDao.deleteWord(word));
     }
 
-    class DeleteWord extends AsyncTask<Word, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Word... words) {
-            wordDao.deleteWord(words[0]);
-            return null;
-        }
-    }
-
-    public void updateWord(Word word){
-        new UpdateWord().execute(word);
-    }
-
-    class UpdateWord extends AsyncTask<Word, Void, Void>{
-        @Override
-        protected Void doInBackground(Word... words) {
-            wordDao.updateWord(words[0]);
-            return null;
-        }
+    public void updateWord(Word word) {
+        WordRoomDatabase.executorService.execute(() -> wordDao.updateWord(word));
     }
 
 }

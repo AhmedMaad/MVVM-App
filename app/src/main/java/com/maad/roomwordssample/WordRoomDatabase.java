@@ -9,17 +9,24 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Database(entities = {Word.class}, version = 2, exportSchema = false)
 public abstract class WordRoomDatabase extends RoomDatabase {
 
     private static WordRoomDatabase instance;
 
+    //To handle executing  DB operations in a background then we wll use the ExecutorService
+    public static final ExecutorService executorService =
+            Executors.newFixedThreadPool(4);
+
     private static RoomDatabase.Callback callback =
-            new RoomDatabase.Callback(){
+            new RoomDatabase.Callback() {
                 @Override
                 public void onOpen(@NonNull SupportSQLiteDatabase db) {
                     super.onOpen(db);
-                    new PopulateDbAsync(instance).execute();
+                    executorService.execute(() -> createInitialData(instance));
                 }
             };
 
@@ -39,29 +46,16 @@ public abstract class WordRoomDatabase extends RoomDatabase {
         return instance;
     }
 
-
     public abstract WordDao wordDao();
 
-
-    private static class PopulateDbAsync extends AsyncTask<Void, Void, Void> {
-
-        private final WordDao mDao;
+    // If we have no words, then create the initial list of words
+    private static void createInitialData(WordRoomDatabase db) {
         String[] words = {"dolphin", "crocodile", "cobra"};
-
-        PopulateDbAsync(WordRoomDatabase db) {
-            mDao = db.wordDao();
-        }
-
-        @Override
-        protected Void doInBackground(final Void... params) {
-            // If we have no words, then create the initial list of words
-            if (mDao.getAnyWord().size() < 1) {
-                for (int i = 0; i <= words.length - 1; i++) {
-                    Word word = new Word(words[i]);
-                    mDao.insert(word);
-                }
+        if (db.wordDao().getAnyWord().size() < 1) {
+            for (int i = 0; i <= words.length - 1; i++) {
+                Word word = new Word(words[i]);
+                db.wordDao().insert(word);
             }
-            return null;
         }
     }
 
